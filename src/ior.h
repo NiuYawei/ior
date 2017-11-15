@@ -133,6 +133,7 @@ typedef struct
     int daosRecordSize;              /* size of akey record (i.e., rx_rsize) */
     int daosStripeSize;
     unsigned long daosStripeCount;
+    unsigned long daosStripeMax;     /* max length of a stripe */
     int daosAios;                    /* max number of concurrent async I/Os */
     int daosWriteOnly;               /* write only, no flush and commit */
     unsigned long daosEpoch;         /* epoch to access */

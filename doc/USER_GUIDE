@@ -366,6 +366,12 @@ DAOS-ONLY:
   * daosStripeCount      - number of stripes [64 * number of targets]
                            NOTE: i.e., number of dkeys
 
+  * daosStripeMax        - max length of each stripe [0]
+                           NOTE: must be a multiple of daosStripeSize
+                           NOTE: for write testing with small storage
+                           NOTE: offsets in a stripe larger than daosStripeMax
+                                 are mapped to offset % daosStripeMax
+
   * daosAios             - max number of asychonous I/Os [1]
 
   * daosWriteOnly        - skip flushing and committing [0=FALSE]

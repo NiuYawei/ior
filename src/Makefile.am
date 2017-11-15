@@ -23,7 +23,7 @@ ior_LDADD += -lpnetcdf
 endif
 if USE_DAOS_AIORI
 ior_SOURCES += aiori-DAOS.c list.h
-ior_LDADD += -ldaos_tier -ldaos -ldaos_common -lfabric -lcrt -luuid
+ior_LDADD += -ldaos_tier -ldaos -ldaos_common -lfabric -lcart -luuid
 endif
 
 IOR_SOURCES = $(ior_SOURCES)

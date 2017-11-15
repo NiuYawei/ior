@@ -524,6 +524,8 @@ static void DAOS_Init(IOR_param_t *param)
 
         if (param->filePerProc)
                 GERR("'filePerProc' not yet supported");
+        if (param->daosStripeMax % param->daosStripeSize != 0)
+                GERR("'daosStripeMax' must be a multiple of 'daosStripeSize'");
         if (param->daosStripeSize % param->transferSize != 0)
                 GERR("'daosStripeSize' must be a multiple of 'transferSize'");
         if (param->transferSize % param->daosRecordSize != 0)
@@ -536,6 +538,9 @@ static void DAOS_Init(IOR_param_t *param)
                                 (objectClass != DAOS_OC_R4S_RW) ||
                                 (objectClass != DAOS_OC_REPL_MAX_RW)))
                 GERR("'daosKill' only makes sense with 'daosObjectClass=repl'");
+
+        if (rank == 0)
+                INFO(VERBOSE_0, param, "WARNING: USING daosStripeMax CAUSES READS TO RETURN INVALID DATA");
 
         rc = daos_init();
         DCHECK(rc, "Failed to initialize daos");
@@ -727,14 +732,14 @@ kill_and_sync(IOR_param_t *param)
                 printf("Time spent inducing failure: %lf\n", (end - start));
 }
 
-
 static IOR_offset_t DAOS_Xfer(int access, void *file, IOR_size_t *buffer,
                               IOR_offset_t length, IOR_param_t *param)
 {
         struct fileDescriptor *fd = file;
         struct aio            *aio;
-        daos_off_t             offset;
         uint64_t               stripe;
+        IOR_offset_t           stripeOffset;
+        uint64_t               round;
         int                    rc;
 
         assert(length == param->transferSize);
@@ -769,7 +774,12 @@ static IOR_offset_t DAOS_Xfer(int access, void *file, IOR_size_t *buffer,
         rc = snprintf(aio->a_dkeyBuf, sizeof aio->a_dkeyBuf, "%lu", stripe);
         assert(rc < sizeof aio->a_dkeyBuf);
         aio->a_dkey.iov_len = strlen(aio->a_dkeyBuf) + 1;
-        aio->a_recx.rx_idx = param->offset / param->daosRecordSize;
+        round = param->offset / (param->daosStripeSize * param->daosStripeCount);
+        stripeOffset = param->daosStripeSize * round +
+                       param->offset % param->daosStripeSize;
+        if (param->daosStripeMax != 0)
+                stripeOffset %= param->daosStripeMax;
+        aio->a_recx.rx_idx = stripeOffset / param->daosRecordSize;
         aio->a_epochRange.epr_lo = fd->epoch;
 
         /*
