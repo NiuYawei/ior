@@ -302,7 +302,6 @@ static void ObjectOpen(daos_handle_t container, daos_handle_t *object,
         int           rc;
 
         oid.hi = 0;
-        oid.mid = 0;
         oid.lo = 1;
         daos_obj_id_generate(&oid, objectClass);
 
@@ -377,12 +376,11 @@ static void AIOInit(IOR_param_t *param)
                 aio->a_iod.iod_eprs  = &aio->a_epochRange;
                 aio->a_iod.iod_size  = param->transferSize;
 
-
                 aio->a_iov.iov_buf = buffers + param->transferSize * i;
                 aio->a_iov.iov_buf_len = param->transferSize;
                 aio->a_iov.iov_len = aio->a_iov.iov_buf_len;
 
-                aio->a_sgl.sg_nr.num = 1;
+                aio->a_sgl.sg_nr = 1;
                 aio->a_sgl.sg_iovs = &aio->a_iov;
 
                 rc = daos_event_init(&aio->a_event, eventQueue,
@@ -501,17 +499,16 @@ static void ParseService(IOR_param_t *param, int max, d_rank_list_t *ranks)
         s = strdup(param->daosPoolSvc);
         if (s == NULL)
                 GERR("failed to duplicate argument");
-        ranks->rl_nr.num = 0;
+        ranks->rl_nr = 0;
         while ((s = strtok(s, ":")) != NULL) {
-                if (ranks->rl_nr.num >= max) {
+                if (ranks->rl_nr >= max) {
                         free(s);
                         GERR("at most %d pool service replicas supported", max);
                 }
-                ranks->rl_ranks[ranks->rl_nr.num] = atoi(s);
-                ranks->rl_nr.num++;
+                ranks->rl_ranks[ranks->rl_nr] = atoi(s);
+                ranks->rl_nr++;
                 s = NULL;
         }
-        ranks->rl_nr.num_out = ranks->rl_nr.num;
         free(s);
 }
 
@@ -694,9 +691,8 @@ kill_daos_server(IOR_param_t *param)
 	rc = daos_mgmt_svc_rip(GetGroup(param), rank, true, NULL);
 	DCHECK(rc, "Error in killing server\n");
 
-	targets.rl_nr.num	= 1;
-	targets.rl_nr.num_out	= 0;
-	targets.rl_ranks	= &rank;
+	targets.rl_nr = 1;
+	targets.rl_ranks = &rank;
 
         svc.rl_ranks = svc_ranks;
         ParseService(param, sizeof(svc_ranks)/ sizeof(svc_ranks[0]), &svc);
